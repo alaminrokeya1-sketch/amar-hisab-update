@@ -1,0 +1,1121 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#0f766e" />
+  <title>আমার হিসাব - দোকান ও কর্মচারী হিসাব অ্যাপ</title>
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="icon" type="image/png" href="./icon-192.png" />
+  <style>
+    :root {
+      --primary: #0f766e;
+      --primary-dark: #115e59;
+      --primary-light: #ccfbf1;
+      --bg: #f1f5f9;
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --income: #15803d;
+      --income-bg: #dcfce7;
+      --expense: #b91c1c;
+      --expense-bg: #fee2e2;
+      --warning: #b45309;
+      --warning-bg: #fef3c7;
+    }
+    * { box-sizing: border-box; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; }
+    body { margin: 0; background: var(--bg); color: var(--text); padding-bottom: 76px; }
+    header {
+      background: var(--primary); color: #fff; padding: 14px 16px;
+      position: sticky; top: 0; z-index: 20; box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    header h1 { margin: 0; font-size: 18px; font-weight: 700; }
+    header .sub { font-size: 12px; opacity: 0.9; }
+    .container { max-width: 720px; margin: 0 auto; padding: 14px; }
+    .card {
+      background: var(--card); border-radius: 12px; padding: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06); border: 1px solid var(--border);
+      margin-bottom: 14px;
+    }
+    .card h2 { margin: 0 0 12px 0; font-size: 16px; color: var(--primary-dark); }
+    label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 5px; color: #334155; }
+    input, select, textarea {
+      width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px;
+      font-size: 15px; margin-bottom: 12px; background: #fff; color: var(--text);
+    }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 2px var(--primary-light); }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      padding: 10px 16px; border: none; border-radius: 8px; font-size: 14px;
+      font-weight: 600; cursor: pointer; transition: 0.15s;
+    }
+    .btn-primary { background: var(--primary); color: #fff; width: 100%; }
+    .btn-primary:hover { background: var(--primary-dark); }
+    .btn-secondary { background: #e2e8f0; color: #1e293b; }
+    .btn-danger { background: #dc2626; color: #fff; }
+    .btn-sm { padding: 6px 10px; font-size: 12px; width: auto; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
+    .stat-box {
+      background: #fff; border-radius: 10px; padding: 10px; text-align: center;
+      border: 1px solid var(--border);
+    }
+    .stat-box .lbl { font-size: 11px; color: var(--muted); font-weight: 600; }
+    .stat-box .val { font-size: 15px; font-weight: 700; margin-top: 4px; }
+    .val.inc { color: var(--income); }
+    .val.exp { color: var(--expense); }
+    .tx-item {
+      border: 1px solid var(--border); border-radius: 10px; padding: 12px;
+      margin-bottom: 10px; background: #fff;
+    }
+    .tx-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+    .tx-title { font-weight: 700; font-size: 15px; }
+    .tx-meta { font-size: 12px; color: var(--muted); margin-top: 3px; }
+    .badge {
+      display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: 11px; font-weight: 700;
+    }
+    .badge-inc { background: var(--income-bg); color: var(--income); }
+    .badge-exp { background: var(--expense-bg); color: var(--expense); }
+    .badge-role { background: var(--primary-light); color: var(--primary-dark); }
+    .tx-actions { display: flex; gap: 8px; margin-top: 10px; border-top: 1px dashed var(--border); padding-top: 8px; }
+    nav.bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0; background: #fff;
+      border-top: 1px solid var(--border); display: flex; z-index: 25;
+      box-shadow: 0 -2px 8px rgba(0,0,0,0.06);
+    }
+    nav.bottom-nav button {
+      flex: 1; border: none; background: none; padding: 10px 4px;
+      font-size: 11px; font-weight: 600; color: var(--muted); cursor: pointer;
+      display: flex; flex-direction: column; align-items: center; gap: 3px;
+    }
+    nav.bottom-nav button.active { color: var(--primary); background: #f0fdfa; }
+    .hidden { display: none !important; }
+    .modal-backdrop {
+      position: fixed; inset: 0; background: rgba(15, 23, 42, 0.55);
+      display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 50;
+    }
+    .modal {
+      background: #fff; border-radius: 14px; padding: 18px; width: 100%; max-width: 420px;
+      max-height: 90vh; overflow-y: auto;
+    }
+    .modal h3 { margin: 0 0 12px 0; font-size: 16px; }
+    .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .alert {
+      padding: 10px 12px; border-radius: 8px; font-size: 13px; margin-bottom: 12px;
+      background: var(--warning-bg); color: var(--warning); border: 1px solid #fde68a;
+    }
+    .log-item {
+      font-size: 12px; padding: 9px 10px; border-bottom: 1px solid var(--border);
+    }
+    .log-item:last-child { border-bottom: none; }
+    .pill-tabs { display: flex; gap: 6px; margin-bottom: 12px; }
+    .pill-tabs button {
+      flex: 1; padding: 8px; border: 1px solid var(--border); border-radius: 8px;
+      background: #f8fafc; font-weight: 600; font-size: 13px; cursor: pointer;
+    }
+    .pill-tabs button.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .customer-balance { font-size:18px; font-weight:800; color:var(--expense); }
+    .customer-entry { display:flex; justify-content:space-between; gap:8px; padding:7px 0; border-bottom:1px dashed var(--border); font-size:12px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>আমার হিসাব</h1>
+    <div class="sub" id="headerUserStatus">লগইন প্রয়োজন</div>
+  </div>
+  <div style="display:flex; gap:6px; align-items:center;">
+    <button id="installBtn" class="btn btn-sm" style="background:#fff; color:#0f766e; display:none;">ইনস্টল অ্যাপ</button>
+    <button id="logoutBtn" class="btn btn-sm btn-secondary hidden" onclick="logout()">লগআউট</button>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- প্রথমবার মালিকের পাসওয়ার্ড সেটআপ স্ক্রিন -->
+  <div id="setupView" class="card hidden">
+    <h2>মালিকের অ্যাকাউন্ট সেটআপ</h2>
+    <p style="font-size:13px; color:var(--muted); margin-top:0;">
+      আপনার ব্যবসার হিসাব সুরক্ষিত রাখতে মালিকের নাম ও পাসওয়ার্ড সেট করুন। ডিলিট ও সেটিংস পরিবর্তনে এই পাসওয়ার্ড লাগবে।
+    </p>
+    <label>মালিকের নাম</label>
+    <input type="text" id="setupOwnerName" placeholder="যেমন: মো. করিম" />
+    <label>মালিকের পাসওয়ার্ড (কমপক্ষে ৪ অক্ষর)</label>
+    <input type="password" id="setupOwnerPass" placeholder="গোপন পাসওয়ার্ড লিখুন" />
+    <label>পাসওয়ার্ড নিশ্চিত করুন</label>
+    <input type="password" id="setupOwnerPassConfirm" placeholder="পুনরায় পাসওয়ার্ড লিখুন" />
+    <button class="btn btn-primary" onclick="completeOwnerSetup()">সেটআপ সম্পন্ন করুন</button>
+  </div>
+
+  <!-- লগইন স্ক্রিন -->
+  <div id="loginView" class="card hidden">
+    <h2>নিরাপদ লগইন</h2>
+    <div class="pill-tabs">
+      <button id="tabOwnerLogin" class="active" onclick="switchLoginRole('owner')">মালিক লগইন</button>
+      <button id="tabEmpLogin" onclick="switchLoginRole('employee')">কর্মচারী লগইন</button>
+    </div>
+
+    <div id="ownerLoginFields">
+      <label>মালিকের পাসওয়ার্ড</label>
+      <input type="password" id="loginOwnerPass" placeholder="মালিকের পাসওয়ার্ড দিন" />
+      <button class="btn btn-primary" onclick="loginAsOwner()">মালিক হিসেবে প্রবেশ করুন</button>
+    </div>
+
+    <div id="empLoginFields" class="hidden">
+      <label>কর্মচারী নির্বাচন করুন</label>
+      <select id="loginEmpSelect"></select>
+      <label>কর্মচারীর পিন / পাসওয়ার্ড</label>
+      <input type="password" id="loginEmpPass" placeholder="কর্মচারীর পিন দিন" />
+      <button class="btn btn-primary" onclick="loginAsEmployee()">কর্মচারী হিসেবে প্রবেশ করুন</button>
+    </div>
+  </div>
+
+  <!-- মূল অ্যাপ ভিউ -->
+  <div id="appView" class="hidden">
+
+    <!-- ট্যাব ১: ড্যাশবোর্ড ও হিসাব -->
+    <div id="secHisab">
+      <div id="ownerFilterCard" class="card hidden" style="padding:12px;">
+        <div class="row-2" style="margin-bottom:0;">
+          <div>
+            <label style="margin-bottom:3px;">কর্মচারী ফিল্টার</label>
+            <select id="filterEmp" style="margin-bottom:0;" onchange="renderHisab()">
+              <option value="ALL">সব কর্মচারী ও মালিক</option>
+            </select>
+          </div>
+          <div>
+            <label style="margin-bottom:3px;">তারিখ ফিল্টার</label>
+            <input type="date" id="filterDate" style="margin-bottom:0;" onchange="renderHisab()" />
+          </div>
+        </div>
+        <div style="margin-top:8px; text-align:right;">
+          <button class="btn btn-sm btn-secondary" onclick="clearFilters()">ফিল্টার মুছুন</button>
+        </div>
+      </div>
+
+      <div class="grid-3">
+        <div class="stat-box">
+          <div class="lbl">মোট জমা / আয়</div>
+          <div class="val inc" id="statIncome">৳ ০</div>
+        </div>
+        <div class="stat-box">
+          <div class="lbl">মোট খরচ / বাকি</div>
+          <div class="val exp" id="statExpense">৳ ০</div>
+        </div>
+        <div class="stat-box">
+          <div class="lbl">নিট ব্যালেন্স</div>
+          <div class="val" id="statBalance">৳ ০</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>নতুন হিসাব যোগ করুন</h2>
+        <div class="row-2">
+          <div>
+            <label>হিসাবের ধরন</label>
+            <select id="txType">
+              <option value="income">জমা / বিক্রি (+)</option>
+              <option value="expense">খরচ / প্রদান (-)</option>
+            </select>
+          </div>
+          <div>
+            <label>টাকার পরিমাণ (৳)</label>
+            <input type="number" id="txAmount" placeholder="0" min="1" step="any" />
+          </div>
+        </div>
+        <div class="row-2">
+          <div>
+            <label>বিবরণ / খাত</label>
+            <input type="text" id="txTitle" placeholder="যেমন: নগদ বিক্রি / মাল ক্রয়" />
+          </div>
+          <div>
+            <label>তারিখ</label>
+            <input type="date" id="txDate" />
+          </div>
+        </div>
+        <label>নোট (ঐচ্ছিক)</label>
+        <input type="text" id="txNote" placeholder="ক্রেতা বা ভাউচার নম্বর লিখতে পারেন" />
+        <button class="btn btn-primary" onclick="addTransaction()">হিসাব সংরক্ষণ করুন</button>
+      </div>
+
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+          <h2 style="margin:0;">হিসাবের তালিকা</h2>
+          <input type="text" id="searchTx" placeholder="খুঁজুন..." style="width:150px; margin:0; padding:6px 10px; font-size:13px;" oninput="renderHisab()" />
+        </div>
+        <div id="txList"></div>
+      </div>
+    </div>
+
+    <!-- বাকি কাস্টমার ব্যবস্থাপনা -->
+    <div id="secCustomers" class="hidden">
+      <div class="card">
+        <h2>নতুন বাকি কাস্টমার যোগ করুন</h2>
+        <label>কাস্টমারের নাম</label>
+        <input type="text" id="customerName" placeholder="কাস্টমারের নাম লিখুন" />
+        <label>মোবাইল নম্বর (ঐচ্ছিক)</label>
+        <input type="tel" id="customerPhone" placeholder="01XXXXXXXXX" />
+        <button class="btn btn-primary" onclick="addCustomer()">কাস্টমার সংরক্ষণ করুন</button>
+      </div>
+      <div class="card">
+        <h2>বাকি যোগ / টাকা আদায়</h2>
+        <label>কাস্টমার নির্বাচন করুন</label>
+        <select id="customerEntryCustomer"></select>
+        <div class="row-2">
+          <div><label>লেনদেনের ধরন</label><select id="customerEntryType"><option value="due">নতুন বাকি (+)</option><option value="payment">টাকা আদায় (-)</option></select></div>
+          <div><label>টাকার পরিমাণ (৳)</label><input type="number" id="customerEntryAmount" min="1" step="any" placeholder="0" /></div>
+        </div>
+        <div class="row-2">
+          <div><label>তারিখ</label><input type="date" id="customerEntryDate" /></div>
+          <div><label>বিবরণ (ঐচ্ছিক)</label><input type="text" id="customerEntryNote" placeholder="যেমন: চাল, ডাল / নগদ" /></div>
+        </div>
+        <button class="btn btn-primary" onclick="addCustomerEntry()">লেনদেন সংরক্ষণ করুন</button>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:0;">টাকা আদায় দিলে বাকি কমবে। নতুন বাকি যোগ করলে বাকি বাড়বে।</p>
+      </div>
+      <div class="grid-3">
+        <div class="stat-box"><div class="lbl">মোট কাস্টমার</div><div class="val" id="customerCount">০</div></div>
+        <div class="stat-box"><div class="lbl">মোট বাকি</div><div class="val exp" id="customerDueTotal">৳ ০</div></div>
+        <div class="stat-box"><div class="lbl">মোট আদায়</div><div class="val inc" id="customerPaidTotal">৳ ০</div></div>
+      </div>
+      <div class="card">
+        <h2>বাকি কাস্টমারের তালিকা</h2>
+        <input type="search" id="customerSearch" placeholder="নাম বা মোবাইল দিয়ে খুঁজুন..." oninput="renderCustomers()" />
+        <div id="customerList"></div>
+      </div>
+    </div>
+
+    <!-- ট্যাব ২: কর্মচারীভিত্তিক রিপোর্ট -->
+    <div id="secReport" class="hidden">
+      <div class="card">
+        <h2>কর্মচারীভিত্তিক আলাদা হিসাব ও রিপোর্ট</h2>
+        <p style="font-size:12px; color:var(--muted); margin-top:0;">
+          প্রতিটি কর্মচারীর মোট জমা, খরচ এবং নিট স্থিতির সারসংক্ষেপ।
+        </p>
+        <div id="empReportList"></div>
+      </div>
+    </div>
+
+    <!-- ট্যাব ৩: পরিবর্তন রেকর্ড (Audit Log) -->
+    <div id="secLogs" class="hidden">
+      <div class="card">
+        <h2>পরিবর্তন ও ডিলিট রেকর্ড (Audit Log)</h2>
+        <p style="font-size:12px; color:var(--muted); margin-top:0;">
+          কে, কখন, কোন হিসাব যোগ, এডিট বা ডিলিট করেছে তার অপরিবর্তনীয় ইতিহাস।
+        </p>
+        <div id="auditLogList"></div>
+      </div>
+    </div>
+
+    <!-- ট্যাব ৪: কর্মচারী ও ব্যাকআপ সেটিংস (শুধুমাত্র মালিকের জন্য) -->
+    <div id="secSettings" class="hidden">
+      <div id="ownerOnlySettings">
+        <div class="card">
+          <h2>নতুন কর্মচারী যোগ করুন</h2>
+          <label>কর্মচারীর নাম</label>
+          <input type="text" id="newEmpName" placeholder="যেমন: রফিকুল ইসলাম" />
+          <div class="row-2">
+            <div>
+              <label>পদবী / দায়িত্ব</label>
+              <input type="text" id="newEmpRole" placeholder="যেমন: বিক্রয়কর্মী" />
+            </div>
+            <div>
+              <label>লগইন পিন / পাসওয়ার্ড</label>
+              <input type="text" id="newEmpPin" placeholder="যেমন: 1234" />
+            </div>
+          </div>
+          <button class="btn btn-primary" onclick="addEmployee()">কর্মচারী যোগ করুন</button>
+        </div>
+
+        <div class="card">
+          <h2>কর্মচারীদের তালিকা</h2>
+          <div id="employeeManageList"></div>
+        </div>
+
+        <div class="card">
+          <h2>মালিকের পাসওয়ার্ড পরিবর্তন</h2>
+          <label>বর্তমান পাসওয়ার্ড</label>
+          <input type="password" id="oldOwnerPass" placeholder="বর্তমান পাসওয়ার্ড" />
+          <label>নতুন পাসওয়ার্ড</label>
+          <input type="password" id="newOwnerPass" placeholder="নতুন পাসওয়ার্ড" />
+          <button class="btn btn-secondary" style="width:100%;" onclick="changeOwnerPassword()">পাসওয়ার্ড আপডেট করুন</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>পুরোনো হিসাব সংরক্ষণ, ব্যাকআপ ও পুনরুদ্ধার</h2>
+        <p style="font-size:13px; color:var(--muted); margin-top:0;">
+          আপনার সব হিসাব, কর্মচারীর তথ্য ও অডিট লগ ফাইল হিসেবে ডাউনলোড করে রাখুন এবং প্রয়োজনে পুনরুদ্ধার করুন।
+        </p>
+        <button class="btn btn-primary" style="margin-bottom:10px;" onclick="exportBackup()">সম্পূর্ণ ব্যাকআপ ডাউনলোড (JSON)</button>
+        <label>ব্যাকআপ ফাইল থেকে পুনরুদ্ধার (Restore)</label>
+        <input type="file" id="restoreFile" accept=".json" onchange="importBackup(event)" />
+        <button class="btn btn-secondary" style="width:100%;" onclick="migrateLegacyData()">পুরোনো v1.1 লোকাল হিসাব খুঁজুন ও যুক্ত করুন</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- এডিট মোডাল -->
+<div id="editModal" class="modal-backdrop hidden">
+  <div class="modal">
+    <h3>হিসাব এডিট করুন</h3>
+    <input type="hidden" id="editTxId" />
+    <label>হিসাবের ধরন</label>
+    <select id="editTxType">
+      <option value="income">জমা / বিক্রি (+)</option>
+      <option value="expense">খরচ / প্রদান (-)</option>
+    </select>
+    <label>টাকার পরিমাণ (৳)</label>
+    <input type="number" id="editTxAmount" min="1" step="any" />
+    <label>বিবরণ / খাত</label>
+    <input type="text" id="editTxTitle" />
+    <label>তারিখ</label>
+    <input type="date" id="editTxDate" />
+    <label>নোট</label>
+    <input type="text" id="editTxNote" />
+    <div class="row-2" style="margin-bottom:0;">
+      <button class="btn btn-secondary" onclick="closeModal('editModal')">বাতিল</button>
+      <button class="btn btn-primary" onclick="saveEditedTransaction()">পরিবর্তন সেভ করুন</button>
+    </div>
+  </div>
+</div>
+
+<!-- ডিলিট পাসওয়ার্ড যাচাই মোডাল -->
+<div id="deleteModal" class="modal-backdrop hidden">
+  <div class="modal">
+    <h3 style="color:var(--expense);">হিসাব ডিলিট নিশ্চিতকরণ</h3>
+    <p style="font-size:13px; color:#334155;">
+      এই হিসাবটি স্থায়ীভাবে মুছে ফেলতে <strong>মালিকের পাসওয়ার্ড</strong> প্রদান করুন। ডিলিটের তথ্য রেকর্ডে সংরক্ষিত থাকবে।
+    </p>
+    <input type="hidden" id="deleteTxId" />
+    <label>মালিকের পাসওয়ার্ড</label>
+    <input type="password" id="deleteConfirmPass" placeholder="মালিকের পাসওয়ার্ড লিখুন" />
+    <div class="row-2" style="margin-bottom:0;">
+      <button class="btn btn-secondary" onclick="closeModal('deleteModal')">বাতিল</button>
+      <button class="btn btn-danger" onclick="confirmDeleteTransaction()">ডিলিট করুন</button>
+    </div>
+  </div>
+</div>
+
+<!-- বটম নেভিগেশন -->
+<nav id="bottomNav" class="bottom-nav hidden">
+  <button id="navHisab" class="active" onclick="switchTab('hisab')">হিসাব</button>
+  <button id="navCustomers" onclick="switchTab('customers')">বাকি কাস্টমার</button>
+  <button id="navReport" onclick="switchTab('report')">রিপোর্ট</button>
+  <button id="navLogs" onclick="switchTab('logs')">রেকর্ড</button>
+  <button id="navSettings" onclick="switchTab('settings')">সেটিংস ও ব্যাকআপ</button>
+</nav>
+
+<script>
+  const STORAGE_KEY = 'amar_hisab_v1_2_data';
+
+  let state = {
+    owner: null, // { name, passHash }
+    employees: [], // [{ id, name, role, pin, active, createdAt }]
+    transactions: [], // [{ id, type, amount, title, date, note, createdById, createdByName, createdByRole, createdAt, updatedAt }]
+    auditLogs: [], // [{ id, action, details, byName, byRole, timestamp }]
+    customers: [], // [{ id, name, phone, createdAt, createdById }]
+    customerEntries: [] // [{ id, customerId, type: 'due'|'payment', amount, date, note, createdById, createdByName, createdAt }]
+  };
+
+  let currentUser = null; // { id, name, role: 'owner' | 'employee' }
+  let deferredPrompt = null;
+
+  function simpleHash(str) {
+    let h = 2166136261;
+    for (let i = 0; i < str.length; i++) {
+      h ^= str.charCodeAt(i);
+      h = Math.imul(h, 16777619);
+    }
+    return (h >>> 0).toString(16);
+  }
+
+  function todayStr() {
+    const d = new Date();
+    return d.toISOString().split('T')[0];
+  }
+
+  function formatBDT(num) {
+    return '৳ ' + Number(num || 0).toLocaleString('bn-BD', { maximumFractionDigits: 2 });
+  }
+
+  function nowFormatted() {
+    return new Date().toLocaleString('bn-BD', {
+      year: 'numeric', month: 'short', day: 'numeric',
+      hour: '2-digit', minute: '2-digit', second: '2-digit'
+    });
+  }
+
+  function saveState() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }
+
+  function addAuditLog(action, details) {
+    const byName = currentUser ? currentUser.name : (state.owner ? state.owner.name : 'সিস্টেম');
+    const byRole = currentUser ? (currentUser.role === 'owner' ? 'মালিক' : 'কর্মচারী') : 'সিস্টেম';
+    state.auditLogs.unshift({
+      id: 'log_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+      action,
+      details,
+      byName,
+      byRole,
+      timestamp: nowFormatted(),
+      iso: new Date().toISOString()
+    });
+    saveState();
+  }
+
+  function migrateLegacyData(manual = false) {
+    let migratedCount = 0;
+    const knownKeys = ['amar_hisab_data', 'amar_hisab_v1', 'amar_hisab_v1_1', 'hisab_transactions', 'transactions'];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k === STORAGE_KEY) continue;
+      if (knownKeys.includes(k) || k.toLowerCase().includes('hisab')) {
+        try {
+          const raw = JSON.parse(localStorage.getItem(k));
+          const list = Array.isArray(raw) ? raw : (raw && Array.isArray(raw.transactions) ? raw.transactions : []);
+          list.forEach((item, idx) => {
+            const amt = Number(item.amount || item.taka || 0);
+            if (amt > 0) {
+              const legacyId = item.id || ('legacy_' + k + '_' + idx);
+              if (!state.transactions.some(t => t.id === legacyId)) {
+                state.transactions.push({
+                  id: legacyId,
+                  type: (item.type === 'expense' || item.type === 'khoroch' || item.type === 'out') ? 'expense' : 'income',
+                  amount: amt,
+                  title: item.title || item.description || item.desc || 'পুরোনো হিসাব (v1.1)',
+                  date: item.date || todayStr(),
+                  note: item.note || 'v1.1 থেকে সংরক্ষিত',
+                  createdById: 'owner',
+                  createdByName: state.owner ? state.owner.name : 'মালিক',
+                  createdByRole: 'owner',
+                  createdAt: item.createdAt || nowFormatted()
+                });
+                migratedCount++;
+              }
+            }
+          });
+        } catch (e) {}
+      }
+    }
+    if (migratedCount > 0) {
+      addAuditLog('পুরোনো হিসাব সংরক্ষণ', `v1.1 থেকে ${migratedCount}টি পুরোনো হিসাব অক্ষতভাবে যুক্ত করা হয়েছে।`);
+      saveState();
+      if (currentUser) renderAll();
+      if (manual) alert(`${migratedCount}টি পুরোনো হিসাব সফলভাবে যুক্ত হয়েছে!`);
+    } else if (manual) {
+      alert('ব্রাউজারে নতুন কোনো অসংরক্ষিত v1.1 হিসাব পাওয়া যায়নি। আগের সব হিসাব ইতিমধ্যে সংরক্ষিত আছে।');
+    }
+  }
+
+  function loadState() {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw);
+        state = Object.assign(state, parsed);
+      } catch (e) {}
+    }
+    state.customers = Array.isArray(state.customers) ? state.customers : [];
+    state.customerEntries = Array.isArray(state.customerEntries) ? state.customerEntries : [];
+    migrateLegacyData(false);
+  }
+
+  function init() {
+    loadState();
+    document.getElementById('txDate').value = todayStr();
+    document.getElementById('customerEntryDate').value = todayStr();
+
+    if (!state.owner) {
+      document.getElementById('setupView').classList.remove('hidden');
+    } else {
+      showLoginView();
+    }
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js').catch(() => {});
+    }
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      const btn = document.getElementById('installBtn');
+      btn.style.display = 'inline-flex';
+      btn.onclick = async () => {
+        if (deferredPrompt) {
+          deferredPrompt.prompt();
+          await deferredPrompt.userChoice;
+          deferredPrompt = null;
+          btn.style.display = 'none';
+        }
+      };
+    });
+  }
+
+  function completeOwnerSetup() {
+    const name = document.getElementById('setupOwnerName').value.trim();
+    const pass = document.getElementById('setupOwnerPass').value;
+    const confirm = document.getElementById('setupOwnerPassConfirm').value;
+    if (!name) return alert('মালিকের নাম লিখুন।');
+    if (pass.length < 4) return alert('পাসওয়ার্ড কমপক্ষে ৪ অক্ষরের হতে হবে।');
+    if (pass !== confirm) return alert('পাসওয়ার্ড দুটি মিলছে না।');
+
+    state.owner = { name, passHash: simpleHash(pass) };
+    migrateLegacyData(false);
+    saveState();
+    document.getElementById('setupView').classList.add('hidden');
+    currentUser = { id: 'owner', name: state.owner.name, role: 'owner' };
+    addAuditLog('অ্যাকাউন্ট তৈরি', `মালিক (${name}) পাসওয়ার্ড সেট করে অ্যাপ চালু করেছেন।`);
+    enterApp();
+  }
+
+  function showLoginView() {
+    document.getElementById('loginView').classList.remove('hidden');
+    document.getElementById('appView').classList.add('hidden');
+    document.getElementById('bottomNav').classList.add('hidden');
+    document.getElementById('logoutBtn').classList.add('hidden');
+    document.getElementById('headerUserStatus').textContent = 'লগইন প্রয়োজন';
+
+    const sel = document.getElementById('loginEmpSelect');
+    sel.innerHTML = '';
+    const activeEmps = state.employees.filter(e => e.active);
+    if (activeEmps.length === 0) {
+      const opt = document.createElement('option');
+      opt.value = '';
+      opt.textContent = 'কোনো সক্রিয় কর্মচারী যোগ করা হয়নি';
+      sel.appendChild(opt);
+    } else {
+      activeEmps.forEach(emp => {
+        const opt = document.createElement('option');
+        opt.value = emp.id;
+        opt.textContent = `${emp.name} (${emp.role || 'কর্মচারী'})`;
+        sel.appendChild(opt);
+      });
+    }
+  }
+
+  function switchLoginRole(role) {
+    document.getElementById('tabOwnerLogin').classList.toggle('active', role === 'owner');
+    document.getElementById('tabEmpLogin').classList.toggle('active', role === 'employee');
+    document.getElementById('ownerLoginFields').classList.toggle('hidden', role !== 'owner');
+    document.getElementById('empLoginFields').classList.toggle('hidden', role !== 'employee');
+  }
+
+  function loginAsOwner() {
+    const pass = document.getElementById('loginOwnerPass').value;
+    if (simpleHash(pass) !== state.owner.passHash) {
+      return alert('ভুল পাসওয়ার্ড! সঠিক মালিক পাসওয়ার্ড দিন।');
+    }
+    document.getElementById('loginOwnerPass').value = '';
+    currentUser = { id: 'owner', name: state.owner.name, role: 'owner' };
+    addAuditLog('লগইন', `মালিক (${state.owner.name}) লগইন করেছেন।`);
+    enterApp();
+  }
+
+  function loginAsEmployee() {
+    const empId = document.getElementById('loginEmpSelect').value;
+    const pin = document.getElementById('loginEmpPass').value;
+    const emp = state.employees.find(e => e.id === empId && e.active);
+    if (!emp) return alert('সক্রিয় কর্মচারী নির্বাচন করুন।');
+    if (emp.pin !== pin) return alert('ভুল পিন! সঠিক কর্মচারী পিন দিন।');
+    document.getElementById('loginEmpPass').value = '';
+    currentUser = { id: emp.id, name: emp.name, role: 'employee' };
+    addAuditLog('লগইন', `কর্মচারী ${emp.name} লগইন করেছেন।`);
+    enterApp();
+  }
+
+  function logout() {
+    if (currentUser) {
+      addAuditLog('লগআউট', `${currentUser.name} লগআউট করেছেন।`);
+    }
+    currentUser = null;
+    showLoginView();
+  }
+
+  function enterApp() {
+    document.getElementById('loginView').classList.add('hidden');
+    document.getElementById('appView').classList.remove('hidden');
+    document.getElementById('bottomNav').classList.remove('hidden');
+    document.getElementById('logoutBtn').classList.remove('hidden');
+
+    const roleText = currentUser.role === 'owner' ? 'মালিক' : 'কর্মচারী';
+    document.getElementById('headerUserStatus').textContent = `${currentUser.name} (${roleText})`;
+
+    const isOwner = currentUser.role === 'owner';
+    document.getElementById('ownerFilterCard').classList.toggle('hidden', !isOwner);
+    document.getElementById('ownerOnlySettings').classList.toggle('hidden', !isOwner);
+
+    switchTab('hisab');
+    renderAll();
+  }
+
+  function switchTab(tab) {
+    ['hisab', 'customers', 'report', 'logs', 'settings'].forEach(t => {
+      document.getElementById('sec' + t.charAt(0).toUpperCase() + t.slice(1)).classList.toggle('hidden', t !== tab);
+      document.getElementById('nav' + t.charAt(0).toUpperCase() + t.slice(1)).classList.toggle('active', t === tab);
+    });
+    renderAll();
+  }
+
+  function renderAll() {
+    populateFilterDropdown();
+    renderHisab();
+    populateCustomerDropdown();
+    renderCustomers();
+    renderReports();
+    renderLogs();
+    renderEmployeeManager();
+  }
+
+  function populateFilterDropdown() {
+    const sel = document.getElementById('filterEmp');
+    const currentVal = sel.value;
+    sel.innerHTML = `<option value="ALL">সব কর্মচারী ও মালিক</option>
+                     <option value="owner">মালিক (${state.owner.name})</option>`;
+    state.employees.forEach(emp => {
+      const opt = document.createElement('option');
+      opt.value = emp.id;
+      opt.textContent = `${emp.name} (${emp.role || 'কর্মচারী'})`;
+      sel.appendChild(opt);
+    });
+    if ([...sel.options].some(o => o.value === currentVal)) sel.value = currentVal;
+  }
+
+  function clearFilters() {
+    document.getElementById('filterEmp').value = 'ALL';
+    document.getElementById('filterDate').value = '';
+    document.getElementById('searchTx').value = '';
+    renderHisab();
+  }
+
+  function addTransaction() {
+    const type = document.getElementById('txType').value;
+    const amount = parseFloat(document.getElementById('txAmount').value);
+    const title = document.getElementById('txTitle').value.trim();
+    const date = document.getElementById('txDate').value || todayStr();
+    const note = document.getElementById('txNote').value.trim();
+
+    if (!amount || amount <= 0) return alert('সঠিক টাকার পরিমাণ লিখুন।');
+    if (!title) return alert('হিসাবের বিবরণ লিখুন।');
+
+    const tx = {
+      id: 'tx_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+      type,
+      amount,
+      title,
+      date,
+      note,
+      createdById: currentUser.id,
+      createdByName: currentUser.name,
+      createdByRole: currentUser.role,
+      createdAt: nowFormatted()
+    };
+
+    state.transactions.unshift(tx);
+    const typeLabel = type === 'income' ? 'জমা' : 'খরচ';
+    addAuditLog('নতুন হিসাব যোগ', `${typeLabel}: ${title} - ${formatBDT(amount)} (তারিখ: ${date})`);
+
+    document.getElementById('txAmount').value = '';
+    document.getElementById('txTitle').value = '';
+    document.getElementById('txNote').value = '';
+    renderAll();
+  }
+
+  function getVisibleTransactions() {
+    let list = [...state.transactions];
+    if (currentUser.role === 'employee') {
+      list = list.filter(t => t.createdById === currentUser.id);
+    } else {
+      const fEmp = document.getElementById('filterEmp').value;
+      if (fEmp && fEmp !== 'ALL') {
+        list = list.filter(t => t.createdById === fEmp);
+      }
+      const fDate = document.getElementById('filterDate').value;
+      if (fDate) {
+        list = list.filter(t => t.date === fDate);
+      }
+    }
+    const q = (document.getElementById('searchTx').value || '').trim().toLowerCase();
+    if (q) {
+      list = list.filter(t =>
+        (t.title || '').toLowerCase().includes(q) ||
+        (t.note || '').toLowerCase().includes(q) ||
+        (t.createdByName || '').toLowerCase().includes(q)
+      );
+    }
+    return list;
+  }
+
+  function renderHisab() {
+    const list = getVisibleTransactions();
+    let inc = 0, exp = 0;
+    list.forEach(t => {
+      if (t.type === 'income') inc += Number(t.amount);
+      else exp += Number(t.amount);
+    });
+
+    document.getElementById('statIncome').textContent = formatBDT(inc);
+    document.getElementById('statExpense').textContent = formatBDT(exp);
+    document.getElementById('statBalance').textContent = formatBDT(inc - exp);
+
+    const container = document.getElementById('txList');
+    if (list.length === 0) {
+      container.innerHTML = `<p style="text-align:center; color:var(--muted); font-size:13px;">কোনো হিসাব পাওয়া যায়নি।</p>`;
+      return;
+    }
+
+    container.innerHTML = list.map(t => {
+      const isInc = t.type === 'income';
+      return `
+        <div class="tx-item">
+          <div class="tx-top">
+            <div>
+              <div class="tx-title">${escapeHtml(t.title)}</div>
+              <div class="tx-meta">
+                তারিখ: ${escapeHtml(t.date)} • এন্ট্রি: <strong>${escapeHtml(t.createdByName)}</strong>
+                <span class="badge badge-role">${t.createdByRole === 'owner' ? 'মালিক' : 'কর্মচারী'}</span>
+              </div>
+              ${t.note ? `<div class="tx-meta">নোট: ${escapeHtml(t.note)}</div>` : ''}
+              ${t.updatedAt ? `<div class="tx-meta" style="color:#b45309;">সর্বশেষ এডিট: ${escapeHtml(t.updatedAt)}</div>` : ''}
+            </div>
+            <div style="text-align:right;">
+              <span class="badge ${isInc ? 'badge-inc' : 'badge-exp'}">${isInc ? 'জমা' : 'খরচ'}</span>
+              <div style="font-weight:700; font-size:16px; margin-top:4px; color:${isInc ? 'var(--income)' : 'var(--expense)'};">
+                ${isInc ? '+' : '-'} ${formatBDT(t.amount)}
+              </div>
+            </div>
+          </div>
+          <div class="tx-actions">
+            <button class="btn btn-sm btn-secondary" onclick="openEditModal('${t.id}')">এডিট</button>
+            <button class="btn btn-sm btn-danger" onclick="openDeleteModal('${t.id}')">ডিলিট (পাসওয়ার্ড)</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function openEditModal(id) {
+    const tx = state.transactions.find(t => t.id === id);
+    if (!tx) return;
+    if (currentUser.role === 'employee' && tx.createdById !== currentUser.id) {
+      return alert('আপনি অন্যের হিসাব এডিট করতে পারবেন না।');
+    }
+    document.getElementById('editTxId').value = tx.id;
+    document.getElementById('editTxType').value = tx.type;
+    document.getElementById('editTxAmount').value = tx.amount;
+    document.getElementById('editTxTitle').value = tx.title;
+    document.getElementById('editTxDate').value = tx.date;
+    document.getElementById('editTxNote').value = tx.note || '';
+    document.getElementById('editModal').classList.remove('hidden');
+  }
+
+  function saveEditedTransaction() {
+    const id = document.getElementById('editTxId').value;
+    const tx = state.transactions.find(t => t.id === id);
+    if (!tx) return;
+
+    const newType = document.getElementById('editTxType').value;
+    const newAmount = parseFloat(document.getElementById('editTxAmount').value);
+    const newTitle = document.getElementById('editTxTitle').value.trim();
+    const newDate = document.getElementById('editTxDate').value || tx.date;
+    const newNote = document.getElementById('editTxNote').value.trim();
+
+    if (!newAmount || newAmount <= 0 || !newTitle) return alert('সঠিক বিবরণ ও টাকার পরিমাণ দিন।');
+
+    const oldSummary = `${tx.title} (${formatBDT(tx.amount)}, ${tx.type === 'income' ? 'জমা' : 'খরচ'})`;
+    const newSummary = `${newTitle} (${formatBDT(newAmount)}, ${newType === 'income' ? 'জমা' : 'খরচ'})`;
+
+    tx.type = newType;
+    tx.amount = newAmount;
+    tx.title = newTitle;
+    tx.date = newDate;
+    tx.note = newNote;
+    tx.updatedAt = `${nowFormatted()} (${currentUser.name})`;
+
+    addAuditLog('হিসাব এডিট', `আগে: [${oldSummary}] -> এখন: [${newSummary}]`);
+    closeModal('editModal');
+    renderAll();
+  }
+
+  function openDeleteModal(id) {
+    document.getElementById('deleteTxId').value = id;
+    document.getElementById('deleteConfirmPass').value = '';
+    document.getElementById('deleteModal').classList.remove('hidden');
+  }
+
+  function confirmDeleteTransaction() {
+    const id = document.getElementById('deleteTxId').value;
+    const pass = document.getElementById('deleteConfirmPass').value;
+
+    if (simpleHash(pass) !== state.owner.passHash) {
+      return alert('মালিকের পাসওয়ার্ড ভুল হয়েছে! হিসাব ডিলিট করা হয়নি।');
+    }
+
+    const idx = state.transactions.findIndex(t => t.id === id);
+    if (idx === -1) return closeModal('deleteModal');
+
+    const removed = state.transactions[idx];
+    state.transactions.splice(idx, 1);
+
+    const typeLabel = removed.type === 'income' ? 'জমা' : 'খরচ';
+    addAuditLog(
+      'হিসাব ডিলিট',
+      `মালিকের পাসওয়ার্ড যাচাই করে ডিলিট: "${removed.title}" (${typeLabel} ${formatBDT(removed.amount)}, তারিখ: ${removed.date}, মূল এন্ট্রি: ${removed.createdByName})`
+    );
+
+    closeModal('deleteModal');
+    renderAll();
+  }
+
+  function closeModal(id) {
+    document.getElementById(id).classList.add('hidden');
+  }
+
+  function addCustomer() {
+    const name = document.getElementById('customerName').value.trim();
+    const phone = document.getElementById('customerPhone').value.trim();
+    if (!name) return alert('কাস্টমারের নাম লিখুন।');
+    const customer = { id: 'cus_' + Date.now() + '_' + Math.random().toString(36).slice(2,6), name, phone, createdAt: nowFormatted(), createdById: currentUser.id };
+    state.customers.unshift(customer);
+    addAuditLog('বাকি কাস্টমার যোগ', `${name}${phone ? ' (' + phone + ')' : ''} কাস্টমার তালিকায় যোগ করা হয়েছে।`);
+    document.getElementById('customerName').value = '';
+    document.getElementById('customerPhone').value = '';
+    renderAll();
+    document.getElementById('customerEntryCustomer').value = customer.id;
+  }
+
+  function populateCustomerDropdown() {
+    const sel = document.getElementById('customerEntryCustomer');
+    if (!sel) return;
+    const previous = sel.value;
+    sel.innerHTML = state.customers.map(c => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}${c.phone ? ' - ' + escapeHtml(c.phone) : ''}</option>`).join('');
+    if (state.customers.some(c => c.id === previous)) sel.value = previous;
+    if (!state.customers.length) sel.innerHTML = '<option value="">আগে কাস্টমার যোগ করুন</option>';
+  }
+
+  function customerTotals(customerId) {
+    const entries = state.customerEntries.filter(e => e.customerId === customerId);
+    const due = entries.filter(e => e.type === 'due').reduce((n,e) => n + Number(e.amount), 0);
+    const paid = entries.filter(e => e.type === 'payment').reduce((n,e) => n + Number(e.amount), 0);
+    return { due, paid, balance: due - paid, entries };
+  }
+
+  function addCustomerEntry() {
+    const customerId = document.getElementById('customerEntryCustomer').value;
+    const type = document.getElementById('customerEntryType').value;
+    const amount = Number(document.getElementById('customerEntryAmount').value);
+    const date = document.getElementById('customerEntryDate').value || todayStr();
+    const note = document.getElementById('customerEntryNote').value.trim();
+    const customer = state.customers.find(c => c.id === customerId);
+    if (!customer) return alert('আগে একজন কাস্টমার যোগ করুন।');
+    if (!Number.isFinite(amount) || amount <= 0) return alert('সঠিক টাকার পরিমাণ লিখুন।');
+    const totals = customerTotals(customerId);
+    if (type === 'payment' && amount > totals.balance) return alert('আদায়ের পরিমাণ বর্তমান বাকি টাকার চেয়ে বেশি হতে পারবে না।');
+    state.customerEntries.unshift({ id:'ce_' + Date.now() + '_' + Math.random().toString(36).slice(2,6), customerId, type, amount, date, note, createdById:currentUser.id, createdByName:currentUser.name, createdAt:nowFormatted() });
+    addAuditLog(type === 'due' ? 'কাস্টমারের বাকি যোগ' : 'কাস্টমারের টাকা আদায়', `${customer.name}: ${type === 'due' ? 'বাকি' : 'আদায়'} ${formatBDT(amount)}${note ? ' (' + note + ')' : ''}`);
+    document.getElementById('customerEntryAmount').value = '';
+    document.getElementById('customerEntryNote').value = '';
+    renderAll();
+  }
+
+  function renderCustomers() {
+    const list = document.getElementById('customerList');
+    if (!list) return;
+    const q = (document.getElementById('customerSearch')?.value || '').trim().toLowerCase();
+    const visible = state.customers.filter(c => `${c.name} ${c.phone || ''}`.toLowerCase().includes(q));
+    const totalDue = state.customerEntries.filter(e => e.type === 'due').reduce((n,e) => n + Number(e.amount), 0);
+    const totalPaid = state.customerEntries.filter(e => e.type === 'payment').reduce((n,e) => n + Number(e.amount), 0);
+    document.getElementById('customerCount').textContent = state.customers.length.toLocaleString('bn-BD');
+    document.getElementById('customerDueTotal').textContent = formatBDT(totalDue);
+    document.getElementById('customerPaidTotal').textContent = formatBDT(totalPaid);
+    if (!visible.length) { list.innerHTML = `<p style="text-align:center;color:var(--muted);font-size:13px;">${state.customers.length ? 'কোনো কাস্টমার পাওয়া যায়নি।' : 'এখনো কোনো বাকি কাস্টমার যোগ করা হয়নি।'}</p>`; return; }
+    list.innerHTML = visible.map(c => {
+      const t = customerTotals(c.id);
+      const history = t.entries.map(e => `<div class="customer-entry"><span>${e.type === 'due' ? 'বাকি যোগ' : 'টাকা আদায়'} · ${escapeHtml(e.date)}${e.note ? ' · ' + escapeHtml(e.note) : ''}</span><strong style="color:${e.type === 'due' ? 'var(--expense)' : 'var(--income)'}">${e.type === 'due' ? '+' : '-'}${formatBDT(e.amount)}</strong></div>`).join('');
+      return `<div class="tx-item"><div class="tx-top"><div><div class="tx-title">${escapeHtml(c.name)}</div><div class="tx-meta">${c.phone ? 'মোবাইল: ' + escapeHtml(c.phone) : 'মোবাইল নম্বর দেওয়া হয়নি'}</div></div><div style="text-align:right"><div class="tx-meta">বর্তমান বাকি</div><div class="customer-balance">${formatBDT(t.balance)}</div></div></div><div class="grid-3" style="margin:10px 0 0"><div class="stat-box"><div class="lbl">মোট বাকি</div><div class="val exp" style="font-size:13px">${formatBDT(t.due)}</div></div><div class="stat-box"><div class="lbl">মোট আদায়</div><div class="val inc" style="font-size:13px">${formatBDT(t.paid)}</div></div><div class="stat-box"><div class="lbl">লেনদেন</div><div class="val" style="font-size:13px">${t.entries.length.toLocaleString('bn-BD')}টি</div></div></div>${history ? `<div style="margin-top:8px"><strong style="font-size:12px">সর্বশেষ লেনদেন</strong>${history}</div>` : '<p class="tx-meta">এখনো কোনো বাকি বা আদায়ের এন্ট্রি নেই।</p>'}</div>`;
+    }).join('');
+  }
+
+  function renderReports() {
+    const container = document.getElementById('empReportList');
+    const people = [
+      { id: 'owner', name: state.owner.name, role: 'মালিক' },
+      ...state.employees.map(e => ({ id: e.id, name: e.name, role: e.role || 'কর্মচারী' }))
+    ];
+
+    const visiblePeople = currentUser.role === 'owner'
+      ? people
+      : people.filter(p => p.id === currentUser.id);
+
+    container.innerHTML = visiblePeople.map(p => {
+      const txs = state.transactions.filter(t => t.createdById === p.id);
+      let inc = 0, exp = 0;
+      txs.forEach(t => {
+        if (t.type === 'income') inc += Number(t.amount);
+        else exp += Number(t.amount);
+      });
+      return `
+        <div class="tx-item">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <div>
+              <strong>${escapeHtml(p.name)}</strong>
+              <span class="badge badge-role">${escapeHtml(p.role)}</span>
+            </div>
+            <span style="font-size:12px; color:var(--muted);">মোট এন্ট্রি: ${txs.length}টি</span>
+          </div>
+          <div class="grid-3" style="margin-bottom:0;">
+            <div class="stat-box" style="padding:6px;">
+              <div class="lbl">জমা</div>
+              <div class="val inc" style="font-size:13px;">${formatBDT(inc)}</div>
+            </div>
+            <div class="stat-box" style="padding:6px;">
+              <div class="lbl">খরচ</div>
+              <div class="val exp" style="font-size:13px;">${formatBDT(exp)}</div>
+            </div>
+            <div class="stat-box" style="padding:6px;">
+              <div class="lbl">নিট স্থিতি</div>
+              <div class="val" style="font-size:13px;">${formatBDT(inc - exp)}</div>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function renderLogs() {
+    const container = document.getElementById('auditLogList');
+    if (state.auditLogs.length === 0) {
+      container.innerHTML = `<p style="color:var(--muted); font-size:13px;">এখনো কোনো রেকর্ড তৈরি হয়নি।</p>`;
+      return;
+    }
+    container.innerHTML = state.auditLogs.map(l => `
+      <div class="log-item">
+        <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
+          <strong style="color:var(--primary-dark);">${escapeHtml(l.action)}</strong>
+          <span style="color:var(--muted); font-size:11px;">${escapeHtml(l.timestamp)}</span>
+        </div>
+        <div style="color:#334155;">${escapeHtml(l.details)}</div>
+        <div style="color:var(--muted); font-size:11px; margin-top:2px;">সম্পাদনকারী: ${escapeHtml(l.byName)} (${escapeHtml(l.byRole)})</div>
+      </div>
+    `).join('');
+  }
+
+  function addEmployee() {
+    if (currentUser.role !== 'owner') return;
+    const name = document.getElementById('newEmpName').value.trim();
+    const role = document.getElementById('newEmpRole').value.trim() || 'কর্মচারী';
+    const pin = document.getElementById('newEmpPin').value.trim();
+
+    if (!name) return alert('কর্মচারীর নাম লিখুন।');
+    if (pin.length < 4) return alert('কর্মচারীর পিন কমপক্ষে ৪ সংখ্যার দিন।');
+
+    const emp = {
+      id: 'emp_' + Date.now(),
+      name,
+      role,
+      pin,
+      active: true,
+      createdAt: nowFormatted()
+    };
+    state.employees.push(emp);
+    addAuditLog('কর্মচারী যোগ', `নতুন কর্মচারী "${name}" (${role}) যোগ করা হয়েছে।`);
+
+    document.getElementById('newEmpName').value = '';
+    document.getElementById('newEmpRole').value = '';
+    document.getElementById('newEmpPin').value = '';
+    renderAll();
+  }
+
+  function toggleEmployeeStatus(empId) {
+    if (currentUser.role !== 'owner') return;
+    const emp = state.employees.find(e => e.id === empId);
+    if (!emp) return;
+    emp.active = !emp.active;
+    addAuditLog('কর্মচারী স্ট্যাটাস পরিবর্তন', `${emp.name} কে ${emp.active ? 'সক্রিয়' : 'নিষ্ক্রিয়'} করা হয়েছে।`);
+    renderAll();
+  }
+
+  function renderEmployeeManager() {
+    const container = document.getElementById('employeeManageList');
+    if (state.employees.length === 0) {
+      container.innerHTML = `<p style="color:var(--muted); font-size:13px;">এখনো কোনো কর্মচারী যোগ করা হয়নি। উপরের ফর্ম থেকে ভবিষ্যতে যেকোনো সময় কর্মচারী যোগ করতে পারবেন।</p>`;
+      return;
+    }
+    container.innerHTML = state.employees.map(emp => `
+      <div class="tx-item" style="display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <strong>${escapeHtml(emp.name)}</strong> (${escapeHtml(emp.role)})
+          <div class="tx-meta">পিন: ${escapeHtml(emp.pin)} • অবস্থা: ${emp.active ? 'সক্রিয়' : 'নিষ্ক্রিয়'}</div>
+        </div>
+        <button class="btn btn-sm ${emp.active ? 'btn-secondary' : 'btn-primary'}" onclick="toggleEmployeeStatus('${emp.id}')">
+          ${emp.active ? 'নিষ্ক্রিয় করুন' : 'সক্রিয় করুন'}
+        </button>
+      </div>
+    `).join('');
+  }
+
+  function changeOwnerPassword() {
+    const oldP = document.getElementById('oldOwnerPass').value;
+    const newP = document.getElementById('newOwnerPass').value;
+    if (simpleHash(oldP) !== state.owner.passHash) return alert('বর্তমান পাসওয়ার্ড ভুল।');
+    if (newP.length < 4) return alert('নতুন পাসওয়ার্ড কমপক্ষে ৪ অক্ষরের হতে হবে।');
+    state.owner.passHash = simpleHash(newP);
+    addAuditLog('পাসওয়ার্ড পরিবর্তন', 'মালিকের লগইন ও ডিলিট পাসওয়ার্ড পরিবর্তন করা হয়েছে।');
+    document.getElementById('oldOwnerPass').value = '';
+    document.getElementById('newOwnerPass').value = '';
+    alert('পাসওয়ার্ড সফলভাবে আপডেট হয়েছে।');
+  }
+
+  function exportBackup() {
+    const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `amar-hisab-backup-${todayStr()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    addAuditLog('ব্যাকআপ ডাউনলোড', 'সম্পূর্ণ হিসাব ও রেকর্ডের JSON ব্যাকআপ ডাউনলোড করা হয়েছে।');
+    renderLogs();
+  }
+
+  function importBackup(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        const imported = JSON.parse(e.target.result);
+        if (!imported.owner || !Array.isArray(imported.transactions)) {
+          return alert('সঠিক ব্যাকআপ ফাইল নয়।');
+        }
+        if (!confirm('ব্যাকআপ পুনরুদ্ধার করলে বর্তমান ডেটার সাথে ব্যাকআপের হিসাব লোড হবে। আপনি কি নিশ্চিত?')) return;
+        state = imported;
+        state.customers = Array.isArray(state.customers) ? state.customers : [];
+        state.customerEntries = Array.isArray(state.customerEntries) ? state.customerEntries : [];
+        state.auditLogs = Array.isArray(state.auditLogs) ? state.auditLogs : [];
+        state.employees = Array.isArray(state.employees) ? state.employees : [];
+        addAuditLog('ব্যাকআপ পুনরুদ্ধার', `"${file.name}" ফাইল থেকে পুরোনো হিসাব ও রেকর্ড পুনরুদ্ধার করা হয়েছে।`);
+        saveState();
+        renderAll();
+        alert('পুরোনো হিসাব সফলভাবে পুনরুদ্ধার হয়েছে!');
+      } catch (err) {
+        alert('ফাইলটি পড়া সম্ভব হয়নি।');
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  function escapeHtml(str) {
+    return String(str || '').replace(/[&<>"']/g, s => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[s]));
+  }
+
+  init();
+</script>
+</body>
+</html>
